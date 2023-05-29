@@ -188,10 +188,10 @@ class AES:
     @staticmethod
     def key_expansion(key):
         rcon_table = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36]
-        num_rounds = {16: 10, 24: 12, 32: 14}
         num_key_words = len(key) // 4
         if not len(key) == 16:
             raise RuntimeError("Incorrect key length")
+        # Create Initial Key Schedule
         key_schedule = [key[i:i + 4] for i in range(0, len(key), 4)]
         for i in range(len(key_schedule)):
             word = []
@@ -201,6 +201,7 @@ class AES:
                 else:
                     word.append(ord(key_schedule[i][j]))
             key_schedule[i] = word
+        # Create Round Keys
         for i in range(num_key_words, 4 * (10 + 1)):
             temp = key_schedule[i - 1]
             if i % num_key_words == 0:
@@ -217,6 +218,7 @@ class AES:
         return new_block
 
     def encrypt(self, plain_text):
+        # Create Initial Array With Plain Text
         state_array = []
         for i in range(0, len(plain_text), 4):
             word = [ord(i) for i in plain_text[i:i + 4]]
@@ -224,41 +226,54 @@ class AES:
         state_array = self.state_array_padding(state_array)
         state_array = np.array(state_array)
         cipher_text = state_array.copy()
+        # Iterate Over Each Block In State Array
         for i in range(0, len(state_array), 4):
             block = np.array(state_array[i:i + 4])
+            # Initial Round
             block = self.add_round_key(block, self.key_schedule[:4])
             for j in range(9):
+                # Main Algorithm
                 block = self.sub_bytes(block)
                 block = self.shift_rows(block)
                 block = self.mix_col(block)
                 block = self.add_round_key(block, self.key_schedule[j * 4 + 4:j * 4 + 8])
+            # Final Round
             block = self.sub_bytes(block)
             block = self.shift_rows(block)
             block = self.add_round_key(block, self.key_schedule[-4:])
+
             cipher_text[i:i + 4] = block
+
         cipher_list = self.arr_to_list(cipher_text)
         cipher_text_str = self.encode_list(cipher_list)
         return cipher_text_str
 
     def decrypt(self, cipher_text):
         cipher_text = self.decode_to_list(cipher_text)
+        # Create Initial Array With Cipher Text
         plain_text = []
         for i in range(0, len(cipher_text), 4):
             word = [i for i in cipher_text[i:i + 4]]
             plain_text.append(word)
         plain_text = self.state_array_padding(plain_text)
         plain_text = np.array(plain_text)
+        # Iterate Over Each Block
         for i in range(0, len(plain_text), 4):
             block = np.array(plain_text[i:i + 4])
+            # Initial Round
             block = self.add_round_key(block, self.key_schedule[-4:])
             block = self.inv_shift_rows(block)
             block = self.inv_sub_bytes(block)
             for j in range(9):
+                # Main Algorithm
                 block = self.add_round_key(block, self.key_schedule[j * -4 - 8:j * -4 - 4])
                 block = self.inv_mix_col(block)
                 block = self.inv_shift_rows(block)
                 block = self.inv_sub_bytes(block)
+            # Final Round
             block = self.add_round_key(block, self.key_schedule[:4])
+
             plain_text[i:i + 4] = block
+
         plain_text_str = self.array_to_str(plain_text)
         return plain_text_str
