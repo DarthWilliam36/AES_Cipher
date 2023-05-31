@@ -16,3 +16,4 @@ Encrypt / Decrypt your strings with:
 cipher_text = cipher.encrypt(plain_text)
 plain_text = cipher.decrypt(cipher_text)
 ```
+!!WIIL BE ADDING A GENERAL DESCRIPTION SOON!!
