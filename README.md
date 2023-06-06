@@ -44,12 +44,19 @@ This function establishes a relationship between the value of one byte and the r
 it multiplies these two matrices in GF(2^8) and instead of adding the numbers, you XOR them. 
 
 ## add_round_key()
-The AES cipher is completely transparent to the public. If you were to rely solely on the other three permutable operations to encrypt your plaintext, it would be very easy to decipher because these operations are widely understood. This function is very simple but is the most important as it distinguishes your cipher from someone else's. All it does is use a bitwise XOR operation on the input block and the key block. 
+The AES cipher is completely transparent to the public. If you were to rely solely on the other three permutable operations to encrypt your plaintext, it would be very easy to decipher because these operations are widely understood. This function is very simple but is the most important as it distinguishes your cipher from someone else's. All it does is use a bitwise XOR operation on the input block and the round key block.
 
 These functions are the backbone of any type of AES cipher and are crucial to fully understand how AES functions. To read more about AES, here are some good sources:  
 https://engineering.purdue.edu/kak/compsec/NewLectures/Lecture8.pdf  
 https://en.wikipedia.org/wiki/Advanced_Encryption_Standard  
 https://www.kavaliro.com/wp-content/uploads/2014/03/AES.pdf  
+
+# Key Expansion
+For each of the 10 rounds in the encryption/decryption processes, the key added to each block differs each round. This means that you would have to expand 1 block (128 bits) into 10 others. This is accomplished using the key expansion algorithm. This function is utilized to expand the original 128 bit key into a series of round keys that are used in each round of the encryption and decryption proceses. The original key is converted to a 4x4 matrix of bytes (8 bits each) refered to as a block and each column in this matrix is denoted as a word. These initial words are used as the first four words of the expanded key. This algorithm expands these four words into 44 words. Each block of round keys is generated from the previous block of round keys. To understand the algorithm, you need to first examine this image:
+
+![alt text](https://people.ece.cornell.edu/land/courses/ece5760/FinalProjects/s2015/ar856/ECE5760webpage/ECE5760%20webpage/webpage_files/key_expansion_module2.jpg)
+
+As you can see, the first step to finding the next block is using the g() function on the last word of the previous block. Next you bitwise XOR the results of the g() function with the first word of the previous block. After this initial step, you can find the rest of the block by XORing the next word of the previous block with the newly created word. The purpose of the g() function is to introduce non-linearity into the expansion algorithm. It works by rotating the bytes of the word one byte to the left, the results of this rotated word are then substituted with the ```s_box```. It is not vital to understand what the g() function does, you can think of it like a black box that takes an input and returns an output. Using this algorithm, you can find the rest of the round keys. 
 
 # Encryption Algorithm
 As seen in the ```encrypt()``` function in the AES class. The algorithm starts by using the ```add_round_key()``` on the state array (block). This is followed by nine rounds of ```sub_bytes(), shift_rows(), mix_col(), add_round_key() ```. The tenth and final round is the exact same but without the ```mix_col()``` step. And boom! You have successfully encrypted your plain text. 
